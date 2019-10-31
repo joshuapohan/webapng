@@ -1,0 +1,67 @@
+<html>
+    <head>
+        <title>APNG Generator</title>
+    </head>
+    <body>
+        <script>
+            function hexToBase64(str) {
+                return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
+            }
+
+            function toHexString(byteArray) {
+                return Array.from(byteArray, function(byte) {
+                    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+                }).join('')
+            }
+
+            function upload(){
+                const formData = new FormData();
+                const fileInputs = document.querySelectorAll('input');
+                console.log(fileInputs.files);
+                for(let i = 0; i < fileInputs.length; i++){
+                    console.log(fileInputs.files);
+                    if(fileInputs[i].files.length > 0){
+                        formData.append('file' + i, fileInputs[i].files[0]);
+                    }
+                }
+                for (let pair of formData.entries()) {
+                    console.log(pair[0]+ ', ' + pair[1]); 
+                }
+            
+                fetch('http:127.0.0.1:8090/upload', {
+                      method: 'POST',
+                      body: formData
+                })
+                .then(function(res) {
+                    return res.blob();
+                })
+                .then(function(blob){
+                    let urlCreator = window.URL || window.webkitURL;
+                    let imageURL = urlCreator.createObjectURL(blob);
+                    document.querySelector("#result").src = imageURL;
+                })
+                .catch(function(e) {
+                      console.log('Error', e);
+                });
+            }            
+        </script>
+        <div>
+            Select a file: <input type="file" name="file1">
+            Select a file: <input type="file" name="file2">
+            Select a file: <input type="file" name="file3">
+            <button onclick="upload()">Upload</button>
+            <img id="result" src=""/>
+        </div>
+        <!--
+        <form 
+            action="http:127.0.0.1:8090/upload", 
+            enctype="multipart/form-data",
+            method="post">
+                Select a file: <input type="file" name="file1">
+                Select a file: <input type="file" name="file2">
+                Select a file: <input type="file" name="file3">
+                <input type="submit" value="submit">
+        </form>
+        -->
+    </body>
+</html>
