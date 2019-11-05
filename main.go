@@ -57,9 +57,15 @@ func GetPort() string {
  	return ":" + port
 }
 
+func rootPage(w http.ResponseWriter, r *http.Request){
+	http.ServeFile(w, r, "./client/build/index.html")
+}
+
 func main(){
 	mux := http.NewServeMux()
 	mux.HandleFunc("/upload", uploadFile)
+	mux.HandleFunc("/", rootPage)
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./client/build/static"))))
 	http.ListenAndServe(GetPort(), mux)
 }
 
