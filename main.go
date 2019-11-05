@@ -42,14 +42,24 @@ func uploadFile(w http.ResponseWriter, r *http.Request){
 	}
 
 	apngEnc.Encode()
-	w.Header().Set("Access-Control-Allow-Origin", "*")	
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	apngEnc.WriteBytes(w)
+}
+
+func GetPort() string {
+ 	var port = os.Getenv("PORT")
+ 	// Set a default port if there is nothing in the environment
+ 	if port == "" {
+ 		port = "8090"
+ 		fmt.Println("INFO: No PORT environment variable detected, defaulting to " + port)
+ 	}
+ 	return ":" + port
 }
 
 func main(){
 	mux := http.NewServeMux()
 	mux.HandleFunc("/upload", uploadFile)
-	http.ListenAndServe(":8090", mux)
+	http.ListenAndServe(GetPort(), mux)
 }
 
 

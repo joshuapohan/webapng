@@ -310,8 +310,8 @@ func (ap *APNGModel) SavePNGData(path string) error {
 /******************************************************
 	WriteBytes
 
-	param path    String of path of where to save the 
-			      file, along with the filename
+	param w  Writer to write the resulting encoded bytes
+			
 	return error
 *******************************************************/
 func (ap *APNGModel) WriteBytes(w io.Writer) error {
