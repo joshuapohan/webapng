@@ -5,7 +5,6 @@ import(
 	"net/http"
 	"os"
 	_ "io"
-	"strings"
 	"strconv"
 
 	"github.com/joshuapohan/webapng/tools"
@@ -30,11 +29,9 @@ func uploadFile(w http.ResponseWriter, r *http.Request){
 	}
 
 	var delays []int
-	for formKey, formValue := range r.PostForm {
-		if strings.Index(formKey, "input") > - 1 {
-			delay, _ := strconv.Atoi(formValue[0])
-			delays = append(delays, delay)
-		}
+	for _, formValue := range r.PostForm {
+		delay, _ := strconv.Atoi(formValue[0])
+		delays = append(delays, delay)
 	}
 	delayLen := len(delays)
 	for i := 1; i <= delayLen; i++ {
@@ -42,7 +39,10 @@ func uploadFile(w http.ResponseWriter, r *http.Request){
 		apngEnc.AppendDelay(delays[delayLen - i])	
 	}
 
-	apngEnc.Encode()
+	err := apngEnc.Encode()
+	if err != nil {
+		fmt.Println(err);
+	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	apngEnc.WriteBytes(w)
 }

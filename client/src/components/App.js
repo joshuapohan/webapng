@@ -2,11 +2,52 @@ import React from 'react';
 import './App.css';
 
 class ImageInput extends React.Component{
+    constructor(props){
+        super(props);
+        this.state = {
+            files: [],
+            delay: this.props.image.delay
+        }
+    }
+
+    onFileChange = (e) => {
+        this.setState({
+            files: e.target.files
+        });
+        this.props.onChildFileChange(this.props.image.id, e.target.files);
+    }
+
+    onDelayChange = (e) => {
+        this.setState({
+            delay: e.target.value
+        });
+        this.props.onChildDelayChange(this.props.image.id, e.target.value);
+    }
+
+    deleteSelf = (e) => {
+        e.preventDefault();
+        this.props.deleteChild(this.props.image.id);
+    }
+
     render(){
         return(
-            <div key={"input" + this.props.id} id={"input" + this.props.id} ref={this.props.addChildRef}>
-                Select a file: <input className="ui input" type="file" name="file" id="file"/>
-                Set frame delay: <input className="ui input" style={{width:"45px"}} type="number" name="delay" id="delay"/>
+            <div key={"input" + this.props.image.id} id={"input" + this.props.image.id}>
+                Select a file: <input className="ui input" 
+                                    type="file" 
+                                    name="file" 
+                                    id="file"
+                                    onChange={this.onFileChange}
+                                />
+                Set frame delay: <input 
+                                    className="ui input" 
+                                    style={{width:"45px"}} 
+                                    type="number" 
+                                    name="delay" 
+                                    id="delay" 
+                                    value={this.state.delay} 
+                                    onChange={this.onDelayChange}
+                                /> ms
+                <button className="ui button red" style={{textAlign:"center", marginLeft:"10px", marginBottom:"10px"}} onClick={this.deleteSelf}>Remove</button>
             </div>
         );
     }
@@ -16,31 +57,24 @@ class App extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            count: 0,
-            inputRefs: [],
-            inputComponents: [],
+            fileInput: [],
             imageLoaded: false
         }
-    }
-
-    addInputRef = (instance) => {
-        this.setState({
-            inputRefs: this.state.inputRefs.concat(instance)
-        })
     }
 
     upload = () => {
         const formData = new FormData();
 
-        for(let i = 0; i < this.state.inputRefs.length;i++){
-            let inputRef = this.state.inputRefs[i];
-            formData.append(inputRef.getAttribute("id"), inputRef.querySelector("#file").files[0]);
-            formData.append(inputRef.getAttribute("id"), inputRef.querySelector("#delay").value);
+        for(let i = 0; i < this.state.fileInput.length;i++){
+            let imageFrame = this.state.fileInput[i];
+
+            formData.append(i, imageFrame.files[0]);
+            formData.append(i, parseInt(imageFrame.delay));
         }
         
         let self = this;
 
-        fetch('https://webapng.herokuapp.com/upload', {
+        fetch('http://127.0.0.1:8090/upload', {
               method: 'POST',
               body: formData
         })
@@ -62,8 +96,36 @@ class App extends React.Component{
 
     addImage = () => {
         this.setState({
-            count: this.state.count + 1,
-            inputComponents: this.state.inputComponents.concat(<ImageInput key={this.state.count + 1} id={this.state.count + 1} addChildRef={this.addInputRef}/>)
+            fileInput: [...this.state.fileInput, {id: this.state.fileInput.length, files:[], delay:64}]
+        });
+    }
+
+    deleteChild = (id) => {
+        let inputList = [...this.state.fileInput].filter(input=>{
+            return input.id !== id;
+        });
+        this.setState({
+            fileInput: inputList
+        });      
+    }
+
+    onChildFileChange = (id, files) => {
+        let inputList = [...this.state.fileInput];
+        let inputFile = {...inputList[id]};
+        inputFile.files = files;
+        inputList[id] = inputFile;
+        this.setState({
+            fileInput: inputList
+        });      
+    }
+
+    onChildDelayChange = (id, delay) => {
+        let inputList = [...this.state.fileInput];
+        let inputFile = {...inputList[id]};
+        inputFile.delay = delay;
+        inputList[id] = inputFile;
+        this.setState({
+            fileInput: inputList
         });
     }
 
@@ -98,8 +160,14 @@ class App extends React.Component{
                     </div>
                     <div className="row">
                         <div className="ui celled list">
-                            {this.state.inputComponents.map((comp)=>{
-                                return comp;
+                            {this.state.fileInput.map((comp, index)=>{
+                                return <ImageInput 
+                                            key={index} 
+                                            image={{...comp}} 
+                                            deleteChild={this.deleteChild}
+                                            onChildFileChange={this.onChildFileChange} 
+                                            onChildDelayChange={this.onChildDelayChange}
+                                        />;
                             })}
                         </div>
                     </div>
