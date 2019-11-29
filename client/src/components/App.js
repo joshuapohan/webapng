@@ -74,7 +74,7 @@ class App extends React.Component{
         
         let self = this;
 
-        fetch('http://127.0.0.1:8090/upload', {
+        fetch('/upload', {
               method: 'POST',
               body: formData
         })
