@@ -29,7 +29,18 @@ class App extends React.Component{
         })
     }
 
-    upload = () => {
+    toPngBlob = (str) => {
+        var hexStr = str.slice(2);
+        var buf = new ArrayBuffer(hexStr.length/2);
+        var byteBuf = new Uint8Array(buf);
+        for (let i=0; i<hexStr.length; i+=2) {
+          byteBuf[i/2] = parseInt(hexStr.slice(i,i+2),16);
+        }
+        var blob = new Blob([byteBuf], {type: "image/png"});
+        return blob;
+    };
+
+    upload = async () => {
         const formData = new FormData();
 
         for(let i = 0; i < this.state.inputRefs.length;i++){
@@ -38,9 +49,9 @@ class App extends React.Component{
             formData.append(inputRef.getAttribute("id"), inputRef.querySelector("#delay").value);
         }
         
-        let self = this;
+        /*let self = this;
 
-        fetch('https://webapng.herokuapp.com/upload', {
+        fetch('http://127.0.0.1:8090/upload', {
               method: 'POST',
               body: formData
         })
@@ -58,6 +69,23 @@ class App extends React.Component{
         .catch(function(e) {
               console.log('Error', e);
         });
+        */
+
+        try{
+            let res = await fetch('http://127.0.0.1:8090/upload', {
+                method: 'POST',
+                body: formData
+            });
+            let resp = await res.json();
+            let urlCreator = window.URL || window.webkitURL;
+            let imageURL = urlCreator.createObjectURL(this.toPngBlob(resp.Image));
+            this.setState({
+                imageLoaded: true
+            });
+            document.querySelector("#result").src = imageURL;
+        } catch(e){
+            console.log('Error', e);
+        }
     }
 
     addImage = () => {
@@ -74,7 +102,7 @@ class App extends React.Component{
                     <div className="item">
                         <h2 className="ui header">
                             <div className="content">
-                                Web Animated PNG
+                                Web Animated PNG2
                             </div>
                         </h2>
                     </div>
@@ -85,15 +113,15 @@ class App extends React.Component{
                                 <div className="content">
                                     Animated PNG Encoder App
                                     <div className="sub header">
-                                        Click Add Image to add frames, click Upload to generate the apng
+                                        Click Add Image to add frames, click Upload to generate the apng2
                                     </div>
                                 </div>
                             </h2>
                         </div>
                     <div className="row">
                         <div className="ui buttons">
-                            <button className="ui button primary" onClick={this.addImage}>Add Image</button>
-                            <button className="ui button secondary" onClick={this.upload}>Upload</button>
+                            <button className="ui button primary" onClick={this.addImage}>Add Image2</button>
+                            <button className="ui button secondary" onClick={this.upload}>Upload2</button>
                         </div>
                     </div>
                     <div className="row">

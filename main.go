@@ -7,11 +7,23 @@ import(
 	_ "io"
 	"strings"
 	"strconv"
+	"bytes"
+	"encoding/json"
+	"encoding/hex"
 
 	"github.com/joshuapohan/webapng/tools"
 )
 
+type resAPNG struct{
+	Status int
+	Image string
+}
 
+/******************************************************
+	uploadFile
+
+	returns blob of apng
+*******************************************************/
 func uploadFile(w http.ResponseWriter, r *http.Request){
 	// parse multi part form
 	// 10 << 20 limits the file to 10MB
@@ -42,9 +54,52 @@ func uploadFile(w http.ResponseWriter, r *http.Request){
 		apngEnc.AppendDelay(delays[delayLen - i])	
 	}
 
-	apngEnc.Encode()
+	err := apngEnc.Encode()
+	if err != nil {
+		fmt.Println(err);
+	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	apngEnc.WriteBytes(w)
+}
+
+/******************************************************
+	JSONGenerateAPNG
+
+	returns json containing Image (hexstring format)
+*******************************************************/
+func JSONGenerateAPNG(w http.ResponseWriter, r *http.Request){
+	r.ParseMultipartForm(10 << 20)
+
+	apngEnc := &tools.APNGModel{}
+	for key, _ := range r.MultipartForm.File{
+		if file, _, err := r.FormFile(key); err == nil{
+			apngEnc.AppendImage(file)
+		}
+	}
+
+	delays := []int{}
+	for _, formValue := range r.PostForm{
+		delay, _ := strconv.Atoi(formValue[0])
+		delays = append(delays, delay)
+	}
+
+	delayLen := len(delays)
+	for i := 1; i <= delayLen; i++{
+		apngEnc.AppendDelay(delays[delayLen - i])
+	}
+
+	apngEnc.Encode()
+
+	res := &resAPNG{}
+	res.Status = 0
+	buf := &bytes.Buffer{}
+	apngEnc.WriteBytes(buf)
+	res.Image = "0x" + hex.EncodeToString(buf.Bytes())
+	
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+
 }
 
 func GetPort() string {
@@ -63,7 +118,8 @@ func rootPage(w http.ResponseWriter, r *http.Request){
 
 func main(){
 	mux := http.NewServeMux()
-	mux.HandleFunc("/upload", uploadFile)
+	//mux.HandleFunc("/upload", uploadFile)
+	mux.HandleFunc("/upload", JSONGenerateAPNG)
 	mux.HandleFunc("/", rootPage)
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./client/build/static"))))
 	http.ListenAndServe(GetPort(), mux)
